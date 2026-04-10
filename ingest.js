@@ -1,5 +1,5 @@
 // ============================================
-// WISE CLIENT TRACKER - WhatsApp Ingestion Service
+// WACA - WhatsApp Client Tracker Agent - Ingestion Service
 // Runs on the dedicated laptop / small server
 // ============================================
 // 
@@ -13,19 +13,10 @@
 
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const { Boom } = require('@hapi/boom');
-const { Pool } = require('pg');
 const pino = require('pino');
+const { db, getDbInfo } = require('./db');
 const { callLLM, getProviderInfo } = require('./llm');
 require('dotenv').config();
-
-// ── Config ──────────────────────────────────────────────
-const db = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME || 'wise_tracker',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-});
 
 const logger = pino({ level: 'info' });
 
@@ -111,7 +102,7 @@ async function triageWithLLM(clientName, recentMessages) {
         `[${m.direction === 'inbound' ? clientName : 'Us'}] ${m.body}`
     ).join('\n');
 
-    const prompt = `You are a support triage agent for Wise, an EdTech infrastructure platform that powers Zoom-based tutoring sessions.
+    const prompt = `You are a support triage agent for a business that manages client communications over WhatsApp.
 
 Given this recent WhatsApp conversation with client "${clientName}", produce a JSON response with:
 {
@@ -295,6 +286,7 @@ async function startWhatsApp() {
 // ── Boot ─────────────────────────────────────────────────
 const llmInfo = getProviderInfo();
 logger.info({ provider: llmInfo.provider, model: llmInfo.model }, 'LLM provider configured');
+logger.info({ db: getDbInfo() }, 'Database configured');
 
 startWhatsApp().catch(err => {
     logger.error({ err }, 'Fatal error');

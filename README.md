@@ -1,4 +1,4 @@
-# Wise Client Tracker
+# WACA — WhatsApp Client Tracker Agent
 
 **WhatsApp → Postgres → LLM Triage → Dashboard**
 
@@ -34,17 +34,17 @@ A self-hosted client communication tracker that listens to WhatsApp via Baileys,
 
 ### Prerequisites
 
-| Tool         | Version | Install                                      |
-|--------------|---------|----------------------------------------------|
-| Node.js      | 18+     | `brew install node` or use nvm (see below)   |
-| PostgreSQL   | 14+     | `brew install postgresql@14`                 |
-| Ollama       | latest  | `brew install ollama` (if using local LLM)   |
+| Tool         | Version | Install                                              |
+|--------------|---------|------------------------------------------------------|
+| Node.js      | 18+     | `brew install node` or use nvm (see below)           |
+| PostgreSQL   | 14+     | Local: `brew install postgresql@14` / Cloud: see below |
+| Ollama       | latest  | `brew install ollama` (only if using local LLM)      |
 
 ### Step 1: Clone and install
 
 ```bash
-git clone <repo-url>
-cd wise-wa-dashboard
+git clone https://github.com/ug911/antiwaca.git
+cd antiwaca
 
 # Use correct Node version (repo includes .nvmrc)
 nvm install
@@ -61,6 +61,10 @@ cd ..
 
 ### Step 2: Set up Postgres
 
+Choose **one** option:
+
+#### Option A: Local Postgres
+
 ```bash
 # Start Postgres (if not running)
 brew services start postgresql@14
@@ -69,6 +73,56 @@ brew services start postgresql@14
 createdb wise_tracker
 psql wise_tracker < schema.sql
 ```
+
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=wise_tracker
+DB_USER=your_username
+DB_PASSWORD=your_password
+```
+
+#### Option B: Neon (recommended cloud — free tier)
+
+1. Sign up at [neon.tech](https://neon.tech) and create a project
+2. Copy the connection string from the dashboard
+3. Apply the schema: `psql "your-connection-string" < schema.sql`
+
+```env
+DATABASE_URL=postgresql://user:pass@ep-xyz.us-east-2.aws.neon.tech/wise_tracker?sslmode=require
+```
+
+#### Option C: Supabase (free tier)
+
+1. Create a project at [supabase.com](https://supabase.com)
+2. Go to **Settings > Database** and copy the connection string
+3. Run the schema via the **SQL Editor** tab (paste `schema.sql` contents) or via `psql`
+
+```env
+DATABASE_URL=postgresql://postgres.xxx:pass@aws-0-region.pooler.supabase.com:6543/postgres
+```
+
+#### Option D: ElephantSQL (free "Tiny Turtle" plan)
+
+1. Create an instance at [elephantsql.com](https://www.elephantsql.com)
+2. Copy the URL from instance details
+3. Apply schema via their **Browser** SQL console or `psql`
+
+```env
+DATABASE_URL=postgres://user:pass@stampy.db.elephantsql.com/dbname
+```
+
+#### Option E: Railway (free trial)
+
+1. Create a Postgres service at [railway.com](https://railway.com)
+2. Copy the `DATABASE_URL` from the **Variables** tab
+3. Apply schema: `psql "$DATABASE_URL" < schema.sql`
+
+```env
+DATABASE_URL=postgresql://postgres:pass@roundhouse.proxy.rlwy.net:port/railway
+```
+
+> **Note:** When using `DATABASE_URL`, all `DB_HOST`/`DB_PORT`/etc vars are ignored. SSL is enabled by default for cloud providers. Set `DB_SSL=false` to disable if needed.
 
 ### Step 3: Configure environment
 
@@ -230,7 +284,7 @@ npm run dev
 #    Node.js 18+, PostgreSQL 14+, Ollama (if using local LLM)
 
 # 2. Clone, install, build
-git clone <repo-url> && cd wise-wa-dashboard
+git clone https://github.com/ug911/antiwaca.git && cd antiwaca
 npm install
 cd frontend && npm install && npm run build && cd ..
 

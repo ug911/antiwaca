@@ -1,7 +1,7 @@
 {
-  "name": "wise-wa-dashboard",
+  "name": "antiwaca",
   "version": "1.0.0",
-  "description": "**WhatsApp → Postgres → LLM Triage → Dashboard**",
+  "description": "WACA - WhatsApp Client Tracker Agent",
   "main": "ingest.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

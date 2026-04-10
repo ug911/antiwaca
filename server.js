@@ -1,5 +1,5 @@
 // ============================================
-// WISE CLIENT TRACKER - Dashboard API Server
+// WACA - WhatsApp Client Tracker Agent - Dashboard API Server
 // Serves the dashboard UI + REST API for Postgres
 // ============================================
 //
@@ -10,9 +10,9 @@
 // Runs on http://localhost:3000
 
 const express = require('express');
-const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
+const { db, getDbInfo } = require('./db');
 require('dotenv').config();
 
 const app = express();
@@ -20,14 +20,6 @@ app.use(cors());
 app.use(express.json());
 // Serve React frontend (built output)
 app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
-
-const db = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME || 'wise_tracker',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-});
 
 // ── Dashboard Metrics ───────────────────────────────────
 app.get('/api/metrics', async (req, res) => {
@@ -356,6 +348,7 @@ app.get('/{*splat}', (req, res) => {
 const PORT = process.env.DASHBOARD_PORT || 3000;
 app.listen(PORT, () => {
     console.log(`✅ Dashboard API running on http://localhost:${PORT}`);
+    console.log(`   Database: ${getDbInfo()}`);
     console.log(`   GET  /api/metrics         - Dashboard summary`);
     console.log(`   GET  /api/clients          - Client health list`);
     console.log(`   GET  /api/tasks            - Task queue (filter: ?category=&status=&priority=)`);

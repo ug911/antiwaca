@@ -1,5 +1,5 @@
 -- ============================================
--- WISE CLIENT TRACKER - Database Schema
+-- WACA - WhatsApp Client Tracker Agent - Database Schema
 -- ============================================
 
 -- Team members who manage client relationships
@@ -25,7 +25,7 @@ CREATE TABLE clients (
     org_name VARCHAR(200),
     phone VARCHAR(20) NOT NULL UNIQUE,
     poc_id INTEGER REFERENCES team_members(id),
-    wise_account_id VARCHAR(100),       -- link to Wise platform if applicable
+    external_account_id VARCHAR(100),    -- link to external platform if applicable
     status VARCHAR(30) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'onboarding', 'churned')),
     notes TEXT,
     created_at TIMESTAMP DEFAULT NOW(),

@@ -1,5 +1,5 @@
 // ============================================
-// WISE CLIENT TRACKER - Multi-Provider LLM Layer
+// WACA - WhatsApp Client Tracker Agent - Multi-Provider LLM Layer
 // Supports: Ollama, OpenAI, Anthropic, Grok (xAI)
 // ============================================
 //
