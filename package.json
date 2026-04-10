@@ -1,0 +1,22 @@
+{
+  "name": "wise-wa-dashboard",
+  "version": "1.0.0",
+  "description": "**WhatsApp → Postgres → LLM Triage → Dashboard**",
+  "main": "ingest.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.1",
+    "express": "^5.2.1",
+    "pg": "^8.20.0",
+    "pino": "^10.3.1"
+  }
+}

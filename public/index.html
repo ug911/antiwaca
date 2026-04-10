@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wise Client Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f6fa; color: #2d3436; }
+
+        /* Nav */
+        .nav { background: #2d3436; padding: 0 24px; display: flex; align-items: center; height: 56px; gap: 32px; }
+        .nav-brand { color: #fff; font-size: 18px; font-weight: 700; }
+        .nav-tabs { display: flex; gap: 4px; }
+        .nav-tab { color: #b2bec3; padding: 8px 16px; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 14px; font-weight: 500; border: none; background: none; }
+        .nav-tab:hover { color: #fff; background: rgba(255,255,255,0.1); }
+        .nav-tab.active { color: #fff; background: #636e72; }
+
+        /* Layout */
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* Metrics */
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .metric-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .metric-value { font-size: 32px; font-weight: 700; color: #2d3436; }
+        .metric-label { font-size: 13px; color: #636e72; margin-top: 4px; }
+        .metric-card.urgent .metric-value { color: #e74c3c; }
+
+        /* Cards / Tables */
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; overflow: hidden; }
+        .card-header { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+        .card-header h2 { font-size: 16px; font-weight: 600; }
+        .card-body { padding: 0; }
+
+        /* Filter bar */
+        .filters { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+        .filter-group { display: flex; align-items: center; gap: 6px; }
+        .filter-group label { font-size: 13px; color: #636e72; font-weight: 500; }
+        select, input[type="text"] { padding: 6px 12px; border: 1px solid #dfe6e9; border-radius: 6px; font-size: 13px; background: #fff; }
+
+        /* Source list */
+        .source-item { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid #f5f5f5; gap: 16px; }
+        .source-item:last-child { border-bottom: none; }
+        .source-item:hover { background: #fafafa; }
+        .source-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .source-icon.dm { background: #dfe6e9; }
+        .source-icon.group { background: #e8f5e9; }
+        .source-info { flex: 1; min-width: 0; }
+        .source-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .source-meta { font-size: 12px; color: #636e72; margin-top: 2px; }
+        .source-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+        /* Badges */
+        .badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-tracked { background: #e8f5e9; color: #27ae60; }
+        .badge-untracked { background: #ffeaa7; color: #636e72; }
+        .badge-dm { background: #dfe6e9; color: #2d3436; }
+        .badge-group { background: #e8f5e9; color: #27ae60; }
+        .badge-critical { background: #ffe0e0; color: #c0392b; }
+        .badge-high { background: #fff3e0; color: #e67e22; }
+        .badge-medium { background: #fff9c4; color: #f39c12; }
+        .badge-low { background: #e8f5e9; color: #27ae60; }
+
+        /* Buttons */
+        .btn { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
+        .btn-primary { background: #0984e3; color: #fff; }
+        .btn-primary:hover { background: #0773c5; }
+        .btn-success { background: #00b894; color: #fff; }
+        .btn-success:hover { background: #00a381; }
+        .btn-danger { background: #e74c3c; color: #fff; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-outline { background: #fff; color: #636e72; border-color: #dfe6e9; }
+        .btn-outline:hover { background: #f5f6fa; }
+        .btn-sm { padding: 4px 10px; font-size: 11px; }
+
+        /* Client list */
+        .client-item { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid #f5f5f5; gap: 16px; cursor: pointer; }
+        .client-item:hover { background: #fafafa; }
+        .client-avatar { width: 40px; height: 40px; border-radius: 50%; background: #0984e3; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+        .client-info { flex: 1; }
+        .client-name { font-weight: 600; font-size: 14px; }
+        .client-org { font-size: 12px; color: #636e72; }
+        .client-stats { text-align: right; font-size: 12px; color: #636e72; }
+
+        /* Task list */
+        .task-item { padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }
+        .task-item:hover { background: #fafafa; }
+        .task-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .task-summary { font-weight: 600; font-size: 14px; flex: 1; }
+        .task-context { font-size: 13px; color: #636e72; margin-bottom: 8px; }
+        .task-draft { font-size: 13px; color: #2d3436; background: #f5f6fa; padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #0984e3; }
+        .task-footer { display: flex; align-items: center; gap: 12px; font-size: 12px; color: #636e72; }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: #fff; border-radius: 12px; padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .modal h3 { margin-bottom: 16px; }
+        .modal .form-group { margin-bottom: 14px; }
+        .modal label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; color: #636e72; }
+        .modal input, .modal select { width: 100%; padding: 8px 12px; border: 1px solid #dfe6e9; border-radius: 6px; font-size: 14px; }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+        /* Messages thread */
+        .messages-thread { padding: 16px 20px; max-height: 400px; overflow-y: auto; }
+        .msg-bubble { max-width: 75%; padding: 10px 14px; border-radius: 12px; margin-bottom: 8px; font-size: 13px; }
+        .msg-inbound { background: #f0f0f0; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .msg-outbound { background: #dcf8c6; margin-left: auto; border-bottom-right-radius: 4px; }
+        .msg-sender { font-size: 11px; font-weight: 600; color: #636e72; margin-bottom: 2px; }
+        .msg-time { font-size: 10px; color: #b2bec3; margin-top: 4px; text-align: right; }
+        .messages-container { display: flex; flex-direction: column; }
+
+        /* Source count badge on client */
+        .source-count { font-size: 11px; color: #636e72; background: #f0f0f0; padding: 2px 8px; border-radius: 10px; }
+
+        /* Empty state */
+        .empty-state { padding: 40px 20px; text-align: center; color: #b2bec3; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-brand">Wise Tracker</div>
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-page="dashboard">Dashboard</button>
+            <button class="nav-tab" data-page="sources">Sources</button>
+            <button class="nav-tab" data-page="clients">Clients</button>
+            <button class="nav-tab" data-page="tasks">Tasks</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Dashboard Page -->
+        <div class="page active" id="page-dashboard">
+            <div class="metrics" id="metrics"></div>
+            <div class="card">
+                <div class="card-header"><h2>Recent Tasks</h2></div>
+                <div class="card-body" id="recent-tasks"></div>
+            </div>
+        </div>
+
+        <!-- Sources Page -->
+        <div class="page" id="page-sources">
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Type:</label>
+                    <select id="source-type-filter">
+                        <option value="">All</option>
+                        <option value="dm">DMs</option>
+                        <option value="group">Groups</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Status:</label>
+                    <select id="source-tracked-filter">
+                        <option value="">All</option>
+                        <option value="false">Untracked</option>
+                        <option value="true">Tracked</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h2>WhatsApp Sources</h2></div>
+                <div class="card-body" id="sources-list"></div>
+            </div>
+        </div>
+
+        <!-- Clients Page -->
+        <div class="page" id="page-clients">
+            <div class="card">
+                <div class="card-header"><h2>Clients</h2></div>
+                <div class="card-body" id="clients-list"></div>
+            </div>
+        </div>
+
+        <!-- Tasks Page -->
+        <div class="page" id="page-tasks">
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Category:</label>
+                    <select id="task-category-filter">
+                        <option value="all">All</option>
+                        <option value="urgent_issue">Urgent Issue</option>
+                        <option value="bug_report">Bug Report</option>
+                        <option value="feature_request">Feature Request</option>
+                        <option value="billing_question">Billing</option>
+                        <option value="general_query">General</option>
+                        <option value="onboarding_help">Onboarding</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Status:</label>
+                    <select id="task-status-filter">
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="">All</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h2>Task Queue</h2></div>
+                <div class="card-body" id="tasks-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Track Source Modal -->
+    <div class="modal-overlay" id="track-modal">
+        <div class="modal">
+            <h3>Track Source</h3>
+            <div class="form-group">
+                <label>Client Name</label>
+                <input type="text" id="track-client-name" placeholder="Client name">
+            </div>
+            <div class="form-group">
+                <label>Organization</label>
+                <input type="text" id="track-org-name" placeholder="Organization (optional)">
+            </div>
+            <div class="form-group">
+                <label>Or link to existing client:</label>
+                <select id="track-existing-client">
+                    <option value="">-- Create new client --</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeModal('track-modal')">Cancel</button>
+                <button class="btn btn-primary" id="track-confirm-btn">Track</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Detail Modal -->
+    <div class="modal-overlay" id="client-modal">
+        <div class="modal" style="max-width: 650px;">
+            <h3 id="client-modal-title">Client</h3>
+            <div id="client-sources-section" style="margin-bottom: 16px;">
+                <label style="font-size: 13px; font-weight: 600; color: #636e72;">Linked Sources:</label>
+                <div id="client-sources-list" style="margin-top: 8px;"></div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 13px; font-weight: 600; color: #636e72;">Conversation (unified):</label>
+                <div class="messages-container" id="client-messages" style="margin-top: 8px; max-height: 350px; overflow-y: auto;"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeModal('client-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Merge Client Modal -->
+    <div class="modal-overlay" id="merge-modal">
+        <div class="modal">
+            <h3>Merge Clients</h3>
+            <p style="font-size: 13px; color: #636e72; margin-bottom: 16px;">
+                Merge a source client into a target client. All messages, tasks, and sources will move to the target.
+            </p>
+            <div class="form-group">
+                <label>Source Client (will be deactivated):</label>
+                <select id="merge-source-client"></select>
+            </div>
+            <div class="form-group">
+                <label>Target Client (will keep):</label>
+                <select id="merge-target-client"></select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeModal('merge-modal')">Cancel</button>
+                <button class="btn btn-danger" id="merge-confirm-btn">Merge</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '';
+
+        // ── Navigation ──────────────────────────────
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('page-' + tab.dataset.page).classList.add('active');
+                loadPage(tab.dataset.page);
+            });
+        });
+
+        function loadPage(page) {
+            if (page === 'dashboard') loadDashboard();
+            else if (page === 'sources') loadSources();
+            else if (page === 'clients') loadClients();
+            else if (page === 'tasks') loadTasks();
+        }
+
+        // ── Dashboard ───────────────────────────────
+        async function loadDashboard() {
+            const [metrics, tasks] = await Promise.all([
+                fetch(API + '/api/metrics').then(r => r.json()),
+                fetch(API + '/api/tasks?status=open').then(r => r.json()),
+            ]);
+
+            document.getElementById('metrics').innerHTML = `
+                <div class="metric-card"><div class="metric-value">${metrics.active_clients}</div><div class="metric-label">Active Clients</div></div>
+                <div class="metric-card"><div class="metric-value">${metrics.open_tasks}</div><div class="metric-label">Open Tasks</div></div>
+                <div class="metric-card ${metrics.urgent_issues > 0 ? 'urgent' : ''}"><div class="metric-value">${metrics.urgent_issues}</div><div class="metric-label">Urgent Issues</div></div>
+                <div class="metric-card"><div class="metric-value">${metrics.avg_response_hours}h</div><div class="metric-label">Avg Response Time</div></div>
+            `;
+
+            document.getElementById('recent-tasks').innerHTML = tasks.slice(0, 10).map(renderTask).join('')
+                || '<div class="empty-state">No open tasks</div>';
+        }
+
+        // ── Sources ─────────────────────────────────
+        async function loadSources() {
+            const params = new URLSearchParams();
+            const typeVal = document.getElementById('source-type-filter').value;
+            const trackedVal = document.getElementById('source-tracked-filter').value;
+            if (typeVal) params.set('source_type', typeVal);
+            if (trackedVal) params.set('tracked', trackedVal);
+
+            const sources = await fetch(API + '/api/sources?' + params).then(r => r.json());
+            const el = document.getElementById('sources-list');
+
+            if (!sources.length) {
+                el.innerHTML = '<div class="empty-state">No sources discovered yet. Start the ingest service and send some WhatsApp messages.</div>';
+                return;
+            }
+
+            el.innerHTML = sources.map(s => `
+                <div class="source-item">
+                    <div class="source-icon ${s.source_type}">${s.source_type === 'dm' ? '&#128100;' : '&#128101;'}</div>
+                    <div class="source-info">
+                        <div class="source-name">${esc(s.display_name || s.jid)}</div>
+                        <div class="source-meta">
+                            <span class="badge badge-${s.source_type}">${s.source_type.toUpperCase()}</span>
+                            ${s.phone ? ' &middot; ' + esc(s.phone) : ''}
+                            &middot; ${s.message_count} msgs
+                            ${s.last_message_at ? ' &middot; Last: ' + timeAgo(s.last_message_at) : ''}
+                        </div>
+                    </div>
+                    <div class="source-actions">
+                        ${s.tracked
+                            ? `<span class="badge badge-tracked">Tracked</span>
+                               ${s.client_name ? '<span style="font-size:12px;color:#636e72;">&#8594; ' + esc(s.client_name) + '</span>' : ''}
+                               <button class="btn btn-outline btn-sm" onclick="untrackSource(${s.id})">Untrack</button>`
+                            : `<span class="badge badge-untracked">Untracked</span>
+                               <button class="btn btn-primary btn-sm" onclick="openTrackModal(${s.id}, '${esc(s.display_name || '')}')">Track</button>`
+                        }
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('source-type-filter').addEventListener('change', loadSources);
+        document.getElementById('source-tracked-filter').addEventListener('change', loadSources);
+
+        let trackingSourceId = null;
+        function openTrackModal(sourceId, name) {
+            trackingSourceId = sourceId;
+            document.getElementById('track-client-name').value = name;
+            document.getElementById('track-org-name').value = '';
+            loadClientsIntoSelect('track-existing-client');
+            openModal('track-modal');
+        }
+
+        document.getElementById('track-confirm-btn').addEventListener('click', async () => {
+            const existingClientId = document.getElementById('track-existing-client').value;
+            if (existingClientId) {
+                await fetch(API + `/api/sources/${trackingSourceId}/link`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ client_id: parseInt(existingClientId) }),
+                });
+            } else {
+                await fetch(API + `/api/sources/${trackingSourceId}/track`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        client_name: document.getElementById('track-client-name').value,
+                        org_name: document.getElementById('track-org-name').value || undefined,
+                    }),
+                });
+            }
+            closeModal('track-modal');
+            loadSources();
+        });
+
+        async function untrackSource(id) {
+            await fetch(API + `/api/sources/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tracked: false }),
+            });
+            loadSources();
+        }
+
+        // ── Clients ─────────────────────────────────
+        async function loadClients() {
+            const clients = await fetch(API + '/api/clients').then(r => r.json());
+            const el = document.getElementById('clients-list');
+
+            if (!clients.length) {
+                el.innerHTML = '<div class="empty-state">No clients yet. Track some WhatsApp sources first.</div>';
+                return;
+            }
+
+            el.innerHTML = `
+                <div style="padding: 12px 20px; border-bottom: 1px solid #f0f0f0;">
+                    <button class="btn btn-outline btn-sm" onclick="openMergeModal()">Merge Clients</button>
+                </div>
+            ` + clients.map(c => `
+                <div class="client-item" onclick="openClientDetail(${c.id}, '${esc(c.name)}')">
+                    <div class="client-avatar">${(c.name || '?')[0].toUpperCase()}</div>
+                    <div class="client-info">
+                        <div class="client-name">${esc(c.name)} ${c.org_name ? '<span style="color:#636e72;font-weight:400;">(' + esc(c.org_name) + ')</span>' : ''}</div>
+                        <div class="client-org">${esc(c.phone)} ${c.poc_name ? '&middot; POC: ' + esc(c.poc_name) : ''}</div>
+                    </div>
+                    <div class="client-stats">
+                        ${parseInt(c.open_tasks) > 0 ? '<span class="badge badge-high">' + c.open_tasks + ' open</span>' : '<span style="color:#00b894;">No open tasks</span>'}
+                        <br>
+                        ${c.last_client_message_at ? 'Last msg: ' + timeAgo(c.last_client_message_at) : 'No messages'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function openClientDetail(clientId, name) {
+            document.getElementById('client-modal-title').textContent = name;
+
+            const [sources, messages] = await Promise.all([
+                fetch(API + `/api/clients/${clientId}/sources`).then(r => r.json()),
+                fetch(API + `/api/clients/${clientId}/messages?limit=100`).then(r => r.json()),
+            ]);
+
+            document.getElementById('client-sources-list').innerHTML = sources.length
+                ? sources.map(s => `
+                    <span class="badge badge-${s.source_type}" style="margin-right: 6px; margin-bottom: 4px;">
+                        ${s.source_type === 'dm' ? '&#128100;' : '&#128101;'} ${esc(s.display_name || s.jid)}
+                    </span>
+                `).join('')
+                : '<span style="color: #b2bec3; font-size: 13px;">No linked sources</span>';
+
+            document.getElementById('client-messages').innerHTML = messages.length
+                ? messages.map(m => `
+                    <div class="msg-bubble ${m.direction === 'inbound' ? 'msg-inbound' : 'msg-outbound'}">
+                        <div class="msg-sender">${esc(m.sender_name || 'Unknown')}</div>
+                        ${esc(m.body)}
+                        <div class="msg-time">${new Date(m.timestamp).toLocaleString()}</div>
+                    </div>
+                `).join('')
+                : '<div class="empty-state">No messages yet</div>';
+
+            openModal('client-modal');
+        }
+
+        // ── Merge ───────────────────────────────────
+        async function openMergeModal() {
+            await loadClientsIntoSelect('merge-source-client');
+            await loadClientsIntoSelect('merge-target-client');
+            openModal('merge-modal');
+        }
+
+        document.getElementById('merge-confirm-btn').addEventListener('click', async () => {
+            const source = document.getElementById('merge-source-client').value;
+            const target = document.getElementById('merge-target-client').value;
+            if (!source || !target || source === target) {
+                alert('Select two different clients.');
+                return;
+            }
+            if (!confirm('This will merge all data from the source client into the target. Continue?')) return;
+
+            await fetch(API + '/api/clients/merge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ source_client_id: parseInt(source), target_client_id: parseInt(target) }),
+            });
+            closeModal('merge-modal');
+            loadClients();
+        });
+
+        // ── Tasks ───────────────────────────────────
+        async function loadTasks() {
+            const params = new URLSearchParams();
+            const cat = document.getElementById('task-category-filter').value;
+            const status = document.getElementById('task-status-filter').value;
+            if (cat) params.set('category', cat);
+            if (status) params.set('status', status);
+
+            const tasks = await fetch(API + '/api/tasks?' + params).then(r => r.json());
+            document.getElementById('tasks-list').innerHTML = tasks.map(renderTask).join('')
+                || '<div class="empty-state">No tasks match your filters</div>';
+        }
+
+        document.getElementById('task-category-filter').addEventListener('change', loadTasks);
+        document.getElementById('task-status-filter').addEventListener('change', loadTasks);
+
+        function renderTask(t) {
+            return `
+                <div class="task-item">
+                    <div class="task-header">
+                        <span class="badge badge-${t.priority}">${t.priority.toUpperCase()}</span>
+                        <span class="badge" style="background:#f0f0f0;color:#636e72;">${t.category.replace(/_/g, ' ')}</span>
+                        <span class="task-summary">${esc(t.summary)}</span>
+                    </div>
+                    <div class="task-context">${esc(t.context || '')}</div>
+                    ${t.draft_response ? '<div class="task-draft">' + esc(t.draft_response) + '</div>' : ''}
+                    <div class="task-footer">
+                        <span>${esc(t.client_name)}</span>
+                        ${t.assigned_to_name ? '&middot; <span>Assigned: ' + esc(t.assigned_to_name) + '</span>' : ''}
+                        &middot; <span>${timeAgo(t.created_at)}</span>
+                        ${t.status === 'open' ? `
+                            <button class="btn btn-success btn-sm" onclick="updateTask(${t.id}, 'resolved')">Resolve</button>
+                            <button class="btn btn-outline btn-sm" onclick="updateTask(${t.id}, 'in_progress')">In Progress</button>
+                        ` : `<span class="badge" style="background:#e8f5e9;color:#27ae60;">${t.status}</span>`}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function updateTask(id, status) {
+            await fetch(API + `/api/tasks/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status }),
+            });
+            loadTasks();
+            loadDashboard();
+        }
+
+        // ── Helpers ─────────────────────────────────
+        async function loadClientsIntoSelect(selectId) {
+            const clients = await fetch(API + '/api/clients').then(r => r.json());
+            const el = document.getElementById(selectId);
+            const firstOption = selectId.startsWith('track') ? '<option value="">-- Create new client --</option>' : '';
+            el.innerHTML = firstOption + clients.map(c =>
+                `<option value="${c.id}">${esc(c.name)}${c.org_name ? ' (' + esc(c.org_name) + ')' : ''}</option>`
+            ).join('');
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        function esc(s) {
+            if (!s) return '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        function timeAgo(dateStr) {
+            const diff = Date.now() - new Date(dateStr).getTime();
+            const mins = Math.floor(diff / 60000);
+            if (mins < 1) return 'just now';
+            if (mins < 60) return mins + 'm ago';
+            const hrs = Math.floor(mins / 60);
+            if (hrs < 24) return hrs + 'h ago';
+            const days = Math.floor(hrs / 24);
+            return days + 'd ago';
+        }
+
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.classList.remove('active');
+            });
+        });
+
+        // ── Boot ────────────────────────────────────
+        loadDashboard();
+    </script>
+</body>
+</html>
